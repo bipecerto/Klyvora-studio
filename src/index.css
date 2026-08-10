@@ -1,0 +1,84 @@
+@import "tailwindcss";
+
+@theme {
+  --color-klyvora-bg: #0A0A0B;
+  --color-klyvora-surface-1: #141416;
+  --color-klyvora-surface-2: #1C1C1F;
+  --color-klyvora-border: rgba(255, 255, 255, 0.08);
+  --color-klyvora-border-strong: rgba(255, 255, 255, 0.14);
+  --color-klyvora-brand-start: #5B3FD6;
+  --color-klyvora-brand-end: #8B5CF6;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: #0A0A0B;
+  color: rgba(255, 255, 255, 0.92);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  overflow-x: hidden;
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0A0A0B;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1C1C1F;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Continuous Marquee Animation */
+@keyframes marquee {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  display: flex;
+  width: max-content;
+  animation: marquee 38s linear infinite;
+  will-change: transform;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
+/* Glow Utilities */
+.hero-radial-glow {
+  background: radial-gradient(60% 50% at 50% 0%, rgba(139, 92, 246, 0.16), transparent 70%);
+}
+
+.klyvora-btn-gradient {
+  background: linear-gradient(135deg, #5B3FD6 0%, #8B5CF6 100%);
+  transition: all 0.2s ease;
+}
+
+.klyvora-btn-gradient:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 4px 20px rgba(123, 92, 246, 0.35);
+}
+
