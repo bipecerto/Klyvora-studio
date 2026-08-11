@@ -1,6 +1,0 @@
-{
-  "name": "Klyvora",
-  "description": "Plataforma de criação automatizada de vídeos curtos com IA para TikTok, Instagram Reels e YouTube Shorts.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}
