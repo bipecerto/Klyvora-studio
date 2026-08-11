@@ -47,9 +47,14 @@ export const VideosPage: React.FC = () => {
     const titleMatch = v.title.toLowerCase().includes(searchQuery.toLowerCase());
     const seriesMatch = (v.series_name || '').toLowerCase().includes(searchQuery.toLowerCase());
     const matchesSearch = titleMatch || seriesMatch;
-    const matchesStatus =
-      statusFilter === 'all' || v.status.toLowerCase() === statusFilter.toLowerCase();
-    return matchesSearch && matchesStatus;
+
+    if (!matchesSearch) return false;
+
+    if (statusFilter === 'all') return true;
+    if (statusFilter === 'shorts') return v.video_format === 'short_form' || !v.video_format || v.aspect_ratio === '9:16';
+    if (statusFilter === 'youtube') return v.video_format === 'long_form' || v.aspect_ratio === '16:9';
+
+    return v.status.toLowerCase() === statusFilter.toLowerCase();
   });
 
   return (
@@ -90,17 +95,24 @@ export const VideosPage: React.FC = () => {
 
         {/* Filter Tabs */}
         <div className="flex flex-wrap items-center gap-1 bg-[#141416] p-1 rounded-xl border border-[rgba(255,255,255,0.08)] self-start sm:self-auto">
-          {['all', 'ready', 'generating', 'draft', 'failed'].map((st) => (
+          {[
+            { id: 'all', label: 'Todos' },
+            { id: 'shorts', label: 'Shorts (9:16)' },
+            { id: 'youtube', label: 'YouTube (16:9)' },
+            { id: 'ready', label: 'Prontos' },
+            { id: 'generating', label: 'Gerando' },
+            { id: 'failed', label: 'Falhas' },
+          ].map((st) => (
             <button
-              key={st}
-              onClick={() => setStatusFilter(st)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition-colors ${
-                statusFilter === st
+              key={st.id}
+              onClick={() => setStatusFilter(st.id)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                statusFilter === st.id
                   ? 'bg-[rgba(255,255,255,0.1)] text-white font-semibold'
                   : 'text-[rgba(255,255,255,0.5)] hover:text-white'
               }`}
             >
-              {st}
+              {st.label}
             </button>
           ))}
         </div>

@@ -12,9 +12,14 @@ interface VideoCardProps {
 }
 
 export const VideoCard: React.FC<VideoCardProps> = ({ video, onPreview, onDelete }) => {
+  const isLongForm = video.video_format === 'long_form' || video.aspect_ratio === '16:9';
+
   return (
     <Card hoverEffect className="bg-[#111116] border-[#27272F] overflow-hidden group flex flex-col justify-between">
-      <div className="relative aspect-[9/16] w-full bg-[#18181F] overflow-hidden cursor-pointer" onClick={() => onPreview(video)}>
+      <div
+        className={`relative ${isLongForm ? 'aspect-[16/9]' : 'aspect-[9/16]'} w-full bg-[#18181F] overflow-hidden cursor-pointer`}
+        onClick={() => onPreview(video)}
+      >
         <img
           src={video.thumbnail_url || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&auto=format&fit=crop&q=80'}
           alt={video.title}
@@ -31,11 +36,18 @@ export const VideoCard: React.FC<VideoCardProps> = ({ video, onPreview, onDelete
 
         {/* Top Header */}
         <div className="absolute top-3 left-3 right-3 flex items-center justify-between z-10">
-          <Badge variant={video.status === 'Ready' ? 'ready' : video.status === 'Generating' ? 'generating' : 'failed'} size="sm">
-            {video.status === 'Ready' ? 'Pronto' : video.status === 'Generating' ? 'Gerando' : 'Falhou'}
-          </Badge>
+          <div className="flex items-center gap-1.5">
+            <Badge variant={video.status === 'Ready' ? 'ready' : video.status === 'Generating' ? 'generating' : 'failed'} size="sm">
+              {video.status === 'Ready' ? 'Pronto' : video.status === 'Generating' ? 'Gerando' : 'Falhou'}
+            </Badge>
+            {isLongForm && (
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-red-600/80 text-white shadow uppercase tracking-wider">
+                YouTube
+              </span>
+            )}
+          </div>
           <span className="text-[10px] font-mono text-white bg-black/60 backdrop-blur-md px-2 py-0.5 rounded">
-            {video.duration}
+            {video.duration || (isLongForm ? '10:00' : '00:60')}
           </span>
         </div>
 

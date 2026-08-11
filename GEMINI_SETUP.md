@@ -19,10 +19,12 @@ Run the following command using the Supabase CLI:
 supabase secrets set GEMINI_API_KEY=your_actual_gemini_api_key_here
 ```
 
-Optionally set custom model alias if needed (defaults to `gemini-3.6-flash`):
+Optionally set custom model variables if needed:
 
 ```bash
-supabase secrets set GEMINI_MODEL=gemini-3.6-flash
+supabase secrets set GEMINI_TEXT_MODEL=gemini-3.6-flash
+supabase secrets set GEMINI_TTS_MODEL=gemini-3.1-flash-tts-preview
+supabase secrets set GEMINI_IMAGE_MODEL=gemini-3.1-flash-image
 ```
 
 ---

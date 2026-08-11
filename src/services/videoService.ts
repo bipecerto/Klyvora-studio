@@ -12,6 +12,11 @@ export interface VideoRecord {
   progress: number;
   thumbnail_url: string | null;
   video_url: string | null;
+  video_storage_path?: string | null;
+  render_status?: 'pending' | 'processing' | 'ready' | 'failed' | string | null;
+  render_progress?: number | null;
+  render_error?: string | null;
+  rendered_at?: string | null;
   duration: number | null; // duration in seconds
   error_message: string | null;
   narration_url?: string | null;
@@ -19,8 +24,46 @@ export interface VideoRecord {
   narration_voice?: string | null;
   narration_duration?: number | null;
   narration_status?: 'pending' | 'generating' | 'ready' | 'failed' | string | null;
+  music_url?: string | null;
+  caption_style?: string | null;
+  video_format?: 'short_form' | 'long_form' | string | null;
+  aspect_ratio?: '9:16' | '16:9' | string | null;
+  target_duration?: number | null;
+  long_form_status?: string | null;
+  youtube_title?: string | null;
+  youtube_description?: string | null;
+  youtube_tags?: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface VideoChapterRecord {
+  id: string;
+  video_id: string;
+  user_id: string;
+  chapter_order: number;
+  title: string;
+  description?: string | null;
+  target_duration?: number | null;
+  actual_duration?: number | null;
+  script?: string | null;
+  narration_url?: string | null;
+  segment_video_url?: string | null;
+  status?: string | null;
+  render_status?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface VideoCaptionRecord {
+  id: string;
+  video_id: string;
+  user_id: string;
+  caption_order: number;
+  start_time: number;
+  end_time: number;
+  text: string;
+  created_at?: string;
 }
 
 export interface VideoSceneRecord {
@@ -316,81 +359,6 @@ export async function deleteVideo(id: string): Promise<void> {
   saveLocalVideos(list.filter((v) => v.id !== id));
 }
 
-
-export function applyGeneratedScriptLocally(videoId: string, data: { topic?: string; title?: string; script?: string; scenes?: any[] }) {
-  const videos = getLocalVideos();
-  const videoIndex = videos.findIndex((v) => v.id === videoId);
-  if (videoIndex !== -1) {
-    videos[videoIndex] = {
-      ...videos[videoIndex],
-      topic: data.topic ?? videos[videoIndex].topic,
-      title: data.title ?? videos[videoIndex].title,
-      script: data.script ?? videos[videoIndex].script,
-      status: 'draft',
-      progress: 100,
-      error_message: null,
-      updated_at: new Date().toISOString(),
-    };
-    saveLocalVideos(videos);
-  }
-
-  if (Array.isArray(data.scenes)) {
-    const existing = getLocalScenes().filter((scene) => scene.video_id !== videoId);
-    const now = new Date().toISOString();
-    const generated = data.scenes.map((scene: any, index: number) => ({
-      id: scene.id || crypto.randomUUID(),
-      video_id: videoId,
-      user_id: 'local-user',
-      scene_order: Number(scene.scene_order) || index + 1,
-      text: scene.text || '',
-      visual_prompt: scene.visual_prompt || '',
-      visual_url: null,
-      visual_storage_path: null,
-      visual_status: 'pending',
-      visual_error: null,
-      visual_generated_at: null,
-      duration: Number(scene.duration) || 5,
-      created_at: now,
-    }));
-    saveLocalScenes([...existing, ...generated]);
-  }
-}
-
-export function applyGeneratedNarrationLocally(videoId: string, narration: { narration_url: string; narration_voice?: string; narration_duration?: number }) {
-  const videos = getLocalVideos();
-  const videoIndex = videos.findIndex((v) => v.id === videoId);
-  if (videoIndex === -1) return;
-  videos[videoIndex] = {
-    ...videos[videoIndex],
-    narration_url: narration.narration_url,
-    narration_voice: narration.narration_voice || 'beta-free',
-    narration_duration: narration.narration_duration || null,
-    narration_status: 'ready',
-    updated_at: new Date().toISOString(),
-  };
-  saveLocalVideos(videos);
-}
-
-export function applyGeneratedVisualsLocally(videoId: string, scenes: VideoSceneRecord[]) {
-  const existing = getLocalScenes();
-  const byId = new Map(scenes.map((scene) => [scene.id, scene]));
-  const merged = existing.map((scene) => scene.video_id === videoId && byId.has(scene.id) ? { ...scene, ...byId.get(scene.id)! } : scene);
-  for (const scene of scenes) {
-    if (!merged.some((item) => item.id === scene.id)) merged.push(scene);
-  }
-  saveLocalScenes(merged);
-
-  const firstReady = scenes.find((scene) => scene.visual_url && scene.visual_status === 'ready');
-  if (firstReady?.visual_url) {
-    const videos = getLocalVideos();
-    const index = videos.findIndex((video) => video.id === videoId);
-    if (index !== -1) {
-      videos[index] = { ...videos[index], thumbnail_url: firstReady.visual_url, progress: 85, updated_at: new Date().toISOString() };
-      saveLocalVideos(videos);
-    }
-  }
-}
-
 export async function updateVideoScene(sceneId: string, updates: Partial<VideoSceneRecord>): Promise<VideoSceneRecord> {
   if (isSupabaseConfigured) {
     try {
@@ -423,4 +391,109 @@ export async function updateVideoScene(sceneId: string, updates: Partial<VideoSc
 
   throw new Error('Scene not found to update');
 }
+
+export async function getVideoCaptions(videoId: string): Promise<VideoCaptionRecord[]> {
+  if (isSupabaseConfigured) {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data, error } = await supabase
+          .from('video_captions')
+          .select('*')
+          .eq('video_id', videoId)
+          .eq('user_id', user.id)
+          .order('caption_order', { ascending: true });
+
+        if (!error && data) return data;
+      }
+    } catch (err) {
+      console.warn('Supabase fetch video captions failed:', err);
+    }
+  }
+  return [];
+}
+
+export async function generateCaptions(videoId: string): Promise<VideoCaptionRecord[]> {
+  const { data: { session } } = await supabase.auth.getSession();
+  const token = session?.access_token || 'guest-token';
+
+  const res = await fetch('/api/generate-captions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ video_id: videoId }),
+  });
+
+  const json = await res.json();
+  if (!res.ok) {
+    throw new Error(json.error || 'Failed to generate captions');
+  }
+  return json.captions || [];
+}
+
+export async function updateVideoCaption(
+  captionId: string,
+  updates: Partial<VideoCaptionRecord>
+): Promise<VideoCaptionRecord> {
+  if (isSupabaseConfigured) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data, error } = await supabase
+        .from('video_captions')
+        .update(updates)
+        .eq('id', captionId)
+        .eq('user_id', user.id)
+        .select('*')
+        .single();
+
+      if (!error && data) return data;
+    }
+  }
+  throw new Error('Failed to update caption');
+}
+
+export async function renderVideo(videoId: string): Promise<{ success: boolean; message?: string }> {
+  const { data: { session } } = await supabase.auth.getSession();
+  const token = session?.access_token || 'guest-token';
+
+  const res = await fetch('/api/render-video', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ video_id: videoId }),
+  });
+
+  const json = await res.json();
+  if (!res.ok) {
+    throw new Error(json.error || 'Failed to start video rendering');
+  }
+  return json;
+}
+
+export async function pollVideoStatus(videoId: string): Promise<any> {
+  const res = await fetch(`/api/video-status/${videoId}`);
+  const json = await res.json();
+  if (!res.ok) {
+    throw new Error(json.error || 'Failed to poll video status');
+  }
+  return json.video;
+}
+
+export async function getVideoChapters(videoId: string): Promise<VideoChapterRecord[]> {
+  if (isSupabaseConfigured) {
+    const { data, error } = await supabase
+      .from('video_chapters')
+      .select('*')
+      .eq('video_id', videoId)
+      .order('chapter_order', { ascending: true });
+
+    if (!error && data) return data;
+  }
+  return [];
+}
+
 

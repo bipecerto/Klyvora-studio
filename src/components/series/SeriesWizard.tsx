@@ -42,17 +42,19 @@ export const SeriesWizard: React.FC<SeriesWizardProps> = ({ onComplete, onCancel
 
   // Form State
   const [formData, setFormData] = useState({
+    video_format: 'short_form' as 'short_form' | 'long_form',
+    aspect_ratio: '9:16' as '9:16' | '16:9',
     name: '',
     niche: 'Automotive',
     language: 'English',
-    duration: '30s' as VideoDuration,
+    duration: '60s' as VideoDuration,
     platform: 'TikTok' as SeriesPlatform,
     description: '',
     content_style: 'Documentary' as ContentStyle,
     voice_gender: 'Male' as VoiceGender,
     voice_style: 'Documentary' as VoiceStyle,
     voice_id: 'Charon',
-    visual_source: 'AI Video' as VisualSource,
+    visual_source: 'mixed' as VisualSource,
     visual_style: 'Cinematic' as VisualStyle,
     captions_enabled: true,
     caption_style: 'Hormozi' as CaptionStyle,
@@ -60,6 +62,29 @@ export const SeriesWizard: React.FC<SeriesWizardProps> = ({ onComplete, onCancel
 
   const updateField = <K extends keyof typeof formData>(field: K, value: typeof formData[K]) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleSelectFormat = (format: 'short_form' | 'long_form') => {
+    if (format === 'short_form') {
+      setFormData((prev) => ({
+        ...prev,
+        video_format: 'short_form',
+        aspect_ratio: '9:16',
+        platform: 'TikTok',
+        duration: '60s',
+        caption_style: 'Hormozi',
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        video_format: 'long_form',
+        aspect_ratio: '16:9',
+        platform: 'YouTube',
+        duration: '10 min',
+        visual_source: 'mixed',
+        caption_style: 'Minimal',
+      }));
+    }
   };
 
   const handleNext = () => {
@@ -73,8 +98,19 @@ export const SeriesWizard: React.FC<SeriesWizardProps> = ({ onComplete, onCancel
   const handleSubmit = async () => {
     setLoading(true);
     try {
+      let targetSec = 60;
+      if (formData.duration === '15s') targetSec = 15;
+      else if (formData.duration === '30s') targetSec = 30;
+      else if (formData.duration === '60s') targetSec = 60;
+      else if (formData.duration === '90s') targetSec = 90;
+      else if (formData.duration === '5 min') targetSec = 300;
+      else if (formData.duration === '10 min') targetSec = 600;
+      else if (formData.duration === '15 min') targetSec = 900;
+      else if (formData.duration === '20 min') targetSec = 1200;
+
       const created = await createSeries({
         ...formData,
+        target_duration: targetSec,
         status: 'Active',
         thumbnail_url:
           formData.niche === 'Automotive'
@@ -149,16 +185,80 @@ export const SeriesWizard: React.FC<SeriesWizardProps> = ({ onComplete, onCancel
         {currentStep === 1 && (
           <div className="space-y-6 animate-fadeIn">
             <div>
-              <h2 className="text-xl font-bold text-[#F7F7F8]">Etapa 1: Detalhes da Série</h2>
+              <h2 className="text-xl font-bold text-[#F7F7F8]">Etapa 1: Formato & Detalhes da Série</h2>
               <p className="text-xs text-[#A1A1AA] mt-1">
-                Configure os metadados básicos e a plataforma alvo para sua série de IA.
+                Escolha o formato do conteúdo e configure os metadados da sua nova série Klyvora.
               </p>
             </div>
 
-            <div className="space-y-4">
+            {/* WHAT DO YOU WANT TO CREATE? */}
+            <div className="space-y-3">
+              <label className="block text-xs font-medium text-[#A1A1AA] uppercase tracking-wider">
+                What do you want to create? (O que você deseja criar?)
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* SHORT VIDEOS CARD */}
+                <button
+                  type="button"
+                  onClick={() => handleSelectFormat('short_form')}
+                  className={`p-4 rounded-2xl border text-left transition-all relative flex flex-col justify-between ${
+                    formData.video_format === 'short_form'
+                      ? 'bg-[#7C3AED]/20 border-[#7C3AED] shadow-lg shadow-[#7C3AED]/10 text-white'
+                      : 'bg-[#18181F] border-[#27272F] text-[#A1A1AA] hover:border-[#373743]'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-bold text-white flex items-center gap-2">
+                      📱 Short Videos
+                    </span>
+                    <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                      9:16
+                    </span>
+                  </div>
+                  <p className="text-xs text-[#A1A1AA]">
+                    TikTok • Instagram Reels • YouTube Shorts
+                  </p>
+                  <span className="text-[11px] font-semibold text-emerald-400 mt-3 block">
+                    30–90 seconds
+                  </span>
+                </button>
+
+                {/* YOUTUBE VIDEOS CARD */}
+                <button
+                  type="button"
+                  onClick={() => handleSelectFormat('long_form')}
+                  className={`p-4 rounded-2xl border text-left transition-all relative flex flex-col justify-between ${
+                    formData.video_format === 'long_form'
+                      ? 'bg-[#7C3AED]/20 border-[#7C3AED] shadow-lg shadow-[#7C3AED]/10 text-white'
+                      : 'bg-[#18181F] border-[#27272F] text-[#A1A1AA] hover:border-[#373743]'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-bold text-white flex items-center gap-2">
+                      🎬 YouTube Videos
+                    </span>
+                    <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-red-500/20 text-red-300 border border-red-500/30">
+                      16:9
+                    </span>
+                  </div>
+                  <p className="text-xs text-[#A1A1AA]">
+                    Long-form YouTube content
+                  </p>
+                  <span className="text-[11px] font-semibold text-red-400 mt-3 block">
+                    5–20 minutes
+                  </span>
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-4 pt-2">
               <Input
                 label="Nome da Série"
-                placeholder="ex: Carros Esportivos Clássicos Revelados"
+                placeholder={
+                  formData.video_format === 'long_form'
+                    ? 'ex: História Automotiva Britânica'
+                    : 'ex: Carros Esportivos Clássicos Revelados'
+                }
                 value={formData.name}
                 onChange={(e) => updateField('name', e.target.value)}
                 required
@@ -198,7 +298,10 @@ export const SeriesWizard: React.FC<SeriesWizardProps> = ({ onComplete, onCancel
                   Plataforma Alvo
                 </label>
                 <div className="grid grid-cols-3 gap-3">
-                  {(['TikTok', 'Instagram Reels', 'YouTube Shorts'] as SeriesPlatform[]).map((p) => (
+                  {(formData.video_format === 'short_form'
+                    ? (['TikTok', 'Instagram Reels', 'YouTube Shorts'] as SeriesPlatform[])
+                    : (['YouTube'] as SeriesPlatform[])
+                  ).map((p) => (
                     <button
                       type="button"
                       key={p}
@@ -223,7 +326,10 @@ export const SeriesWizard: React.FC<SeriesWizardProps> = ({ onComplete, onCancel
                   Duração do Vídeo
                 </label>
                 <div className="grid grid-cols-4 gap-3">
-                  {(['15s', '30s', '60s', '90s'] as VideoDuration[]).map((d) => (
+                  {(formData.video_format === 'short_form'
+                    ? (['30s', '45s', '60s', '90s'] as VideoDuration[])
+                    : (['5 min', '10 min', '15 min', '20 min'] as VideoDuration[])
+                  ).map((d) => (
                     <button
                       type="button"
                       key={d}
@@ -321,33 +427,92 @@ export const SeriesWizard: React.FC<SeriesWizardProps> = ({ onComplete, onCancel
             <div>
               <h2 className="text-xl font-bold text-[#F7F7F8]">Etapa 4: Fonte de Cenas & Visuais</h2>
               <p className="text-xs text-[#A1A1AA] mt-1">
-                Escolha o motor de renderização visual e a estética das cenas.
+                Escolha a fonte das imagens e o estilo estético das cenas.
               </p>
+            </div>
+
+            {/* Presets */}
+            <div className="p-4 bg-[#18181F] border border-[#27272F] rounded-2xl space-y-3">
+              <span className="text-xs font-semibold text-[#A78BFA] uppercase tracking-wider flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5" /> Presets Rápidos
+              </span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    updateField('visual_source', 'stock' as VisualSource);
+                    updateField('visual_style', 'Documentary' as VisualStyle);
+                  }}
+                  className={`p-3 rounded-xl border text-left transition-all ${
+                    formData.visual_source === 'stock'
+                      ? 'bg-[#7C3AED]/20 border-[#7C3AED] text-white'
+                      : 'bg-[#111116] border-[#27272F] text-[#A1A1AA] hover:border-[#373743]'
+                  }`}
+                >
+                  <div className="text-xs font-bold text-emerald-400">⚡ Low Cost (Econômico)</div>
+                  <div className="text-[11px] mt-0.5 opacity-80">Stock Media + Render Local Grátis (Sem consumo de IA)</div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    updateField('visual_source', 'mixed' as VisualSource);
+                    updateField('visual_style', 'Cinematic' as VisualStyle);
+                  }}
+                  className={`p-3 rounded-xl border text-left transition-all ${
+                    formData.visual_source === 'mixed'
+                      ? 'bg-[#7C3AED]/20 border-[#7C3AED] text-white'
+                      : 'bg-[#111116] border-[#27272F] text-[#A1A1AA] hover:border-[#373743]'
+                  }`}
+                >
+                  <div className="text-xs font-bold text-purple-400">⚖️ Balanced (Recomendado)</div>
+                  <div className="text-[11px] mt-0.5 opacity-80">Imagens IA com Fallback Automático para Stock em caso de cota</div>
+                </button>
+              </div>
             </div>
 
             <div className="space-y-4">
               <div>
                 <label className="block text-xs font-medium text-[#A1A1AA] uppercase tracking-wider mb-2">
-                  Fonte Visual
+                  Fonte Visual Híbrida
                 </label>
                 <div className="grid grid-cols-2 gap-3">
-                  {(['AI Images', 'AI Video', 'Stock Footage', 'Mixed'] as VisualSource[]).map((src) => (
-                    <button
-                      type="button"
-                      key={src}
-                      onClick={() => updateField('visual_source', src)}
-                      className={`
-                        p-3.5 rounded-xl border text-xs font-semibold transition-all text-center
-                        ${
-                          formData.visual_source === src
-                            ? 'bg-[#7C3AED]/20 border-[#7C3AED] text-[#F7F7F8]'
-                            : 'bg-[#18181F] border-[#27272F] text-[#A1A1AA]'
-                        }
-                      `}
-                    >
-                      {src === 'AI Images' ? 'Imagens de IA' : src === 'AI Video' ? 'Vídeo de IA' : src === 'Stock Footage' ? 'Vídeos de Arquivo' : 'Misto'}
-                    </button>
-                  ))}
+                  {[
+                    { key: 'ai_image', label: 'AI Images', desc: 'Geração por IA (Gemini Imagen 3)' },
+                    { key: 'stock', label: 'Stock Media', desc: 'Fotos e vídeos de banco de imagens' },
+                    { key: 'upload', label: 'Manual Upload', desc: 'Upload manual de mídia para cada cena' },
+                    { key: 'mixed', label: 'Auto / Mixed', desc: 'IA com fallback automático para Stock' },
+                  ].map((src) => {
+                    const isSelected =
+                      formData.visual_source === src.key ||
+                      (src.key === 'ai_image' && formData.visual_source === 'AI Images') ||
+                      (src.key === 'stock' && formData.visual_source === 'Stock Footage') ||
+                      (src.key === 'mixed' && formData.visual_source === 'Mixed');
+
+                    return (
+                      <button
+                        type="button"
+                        key={src.key}
+                        onClick={() => updateField('visual_source', src.key as VisualSource)}
+                        className={`
+                          p-3.5 rounded-xl border text-left transition-all relative
+                          ${
+                            isSelected
+                              ? 'bg-[#7C3AED]/20 border-[#7C3AED] text-[#F7F7F8]'
+                              : 'bg-[#18181F] border-[#27272F] text-[#A1A1AA] hover:border-[#373743]'
+                          }
+                        `}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold">{src.label}</span>
+                          {src.key === 'mixed' && (
+                            <span className="text-[9px] bg-[#7C3AED] text-white px-1.5 py-0.5 rounded font-medium">Recomendado</span>
+                          )}
+                        </div>
+                        <p className="text-[10px] text-[#A1A1AA] mt-1 line-clamp-2">{src.desc}</p>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 

@@ -1,0 +1,34 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+  functions = "netlify/functions"
+
+[functions]
+  node_bundler = "esbuild"
+
+# Redirect for background video rendering function
+[[redirects]]
+  from = "/api/render-video"
+  to = "/.netlify/functions/render-video-background"
+  status = 200
+  force = true
+
+# Redirect for video status endpoint
+[[redirects]]
+  from = "/api/video-status/:id"
+  to = "/.netlify/functions/video-status?id=:id"
+  status = 200
+  force = true
+
+# Generic API redirects to Netlify Functions
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+  force = true
+
+# SPA Fallback for React Router
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
