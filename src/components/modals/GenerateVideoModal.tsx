@@ -101,7 +101,7 @@ export const GenerateVideoModal: React.FC<GenerateVideoModalProps> = ({
       // 2. Call Edge Function / API for script generation
       await generateVideoScript(videoId, isAuto);
 
-      // 3. Generate Neural TTS Narration
+      // 3. Generate beta narration
       setProgressPercent(50);
       setProgressStage('Generating voice narration...');
       try {
@@ -110,9 +110,9 @@ export const GenerateVideoModal: React.FC<GenerateVideoModalProps> = ({
         console.warn('Narration auto-generation error (video script still available):', narrErr);
       }
 
-      // 4. Generate Real Scene Visuals (Gemini Image API)
+      // 4. Generate AI Scene Visuals (Cloudflare Workers AI)
       setProgressPercent(65);
-      setProgressStage('Generating scene visuals...');
+      setProgressStage('Generating AI images with Cloudflare...');
       try {
         await generateVideoVisuals(videoId);
       } catch (visErr: any) {

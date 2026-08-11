@@ -1,4 +1,6 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { applyGeneratedScriptLocally, getVideoById } from './videoService';
+import { getSeriesById } from './seriesService';
 
 export interface GenerationResponse {
   success: boolean;
@@ -22,6 +24,14 @@ export async function generateVideoScript(
   topic?: string
 ): Promise<GenerationResponse> {
   let token = 'guest-token';
+  let resolvedSeriesContext = seriesContext;
+
+  if (!resolvedSeriesContext) {
+    try {
+      const localVideo = await getVideoById(videoId);
+      if (localVideo?.series_id) resolvedSeriesContext = await getSeriesById(localVideo.series_id);
+    } catch (_) {}
+  }
 
   if (isSupabaseConfigured) {
     try {
@@ -41,7 +51,7 @@ export async function generateVideoScript(
     body: JSON.stringify({
       video_id: videoId,
       auto_topic: autoTopic,
-      series_context: seriesContext,
+      series_context: resolvedSeriesContext,
       topic,
     }),
   });
@@ -50,6 +60,10 @@ export async function generateVideoScript(
 
   if (!response.ok || data?.error) {
     throw new Error(data?.error || `Server generation failed (Status ${response.status})`);
+  }
+
+  if (token === 'guest-token') {
+    applyGeneratedScriptLocally(videoId, data);
   }
 
   return data as GenerationResponse;

@@ -316,6 +316,81 @@ export async function deleteVideo(id: string): Promise<void> {
   saveLocalVideos(list.filter((v) => v.id !== id));
 }
 
+
+export function applyGeneratedScriptLocally(videoId: string, data: { topic?: string; title?: string; script?: string; scenes?: any[] }) {
+  const videos = getLocalVideos();
+  const videoIndex = videos.findIndex((v) => v.id === videoId);
+  if (videoIndex !== -1) {
+    videos[videoIndex] = {
+      ...videos[videoIndex],
+      topic: data.topic ?? videos[videoIndex].topic,
+      title: data.title ?? videos[videoIndex].title,
+      script: data.script ?? videos[videoIndex].script,
+      status: 'draft',
+      progress: 100,
+      error_message: null,
+      updated_at: new Date().toISOString(),
+    };
+    saveLocalVideos(videos);
+  }
+
+  if (Array.isArray(data.scenes)) {
+    const existing = getLocalScenes().filter((scene) => scene.video_id !== videoId);
+    const now = new Date().toISOString();
+    const generated = data.scenes.map((scene: any, index: number) => ({
+      id: scene.id || crypto.randomUUID(),
+      video_id: videoId,
+      user_id: 'local-user',
+      scene_order: Number(scene.scene_order) || index + 1,
+      text: scene.text || '',
+      visual_prompt: scene.visual_prompt || '',
+      visual_url: null,
+      visual_storage_path: null,
+      visual_status: 'pending',
+      visual_error: null,
+      visual_generated_at: null,
+      duration: Number(scene.duration) || 5,
+      created_at: now,
+    }));
+    saveLocalScenes([...existing, ...generated]);
+  }
+}
+
+export function applyGeneratedNarrationLocally(videoId: string, narration: { narration_url: string; narration_voice?: string; narration_duration?: number }) {
+  const videos = getLocalVideos();
+  const videoIndex = videos.findIndex((v) => v.id === videoId);
+  if (videoIndex === -1) return;
+  videos[videoIndex] = {
+    ...videos[videoIndex],
+    narration_url: narration.narration_url,
+    narration_voice: narration.narration_voice || 'beta-free',
+    narration_duration: narration.narration_duration || null,
+    narration_status: 'ready',
+    updated_at: new Date().toISOString(),
+  };
+  saveLocalVideos(videos);
+}
+
+export function applyGeneratedVisualsLocally(videoId: string, scenes: VideoSceneRecord[]) {
+  const existing = getLocalScenes();
+  const byId = new Map(scenes.map((scene) => [scene.id, scene]));
+  const merged = existing.map((scene) => scene.video_id === videoId && byId.has(scene.id) ? { ...scene, ...byId.get(scene.id)! } : scene);
+  for (const scene of scenes) {
+    if (!merged.some((item) => item.id === scene.id)) merged.push(scene);
+  }
+  saveLocalScenes(merged);
+
+  const firstReady = scenes.find((scene) => scene.visual_url && scene.visual_status === 'ready');
+  if (firstReady?.visual_url) {
+    const videos = getLocalVideos();
+    const index = videos.findIndex((video) => video.id === videoId);
+    if (index !== -1) {
+      videos[index] = { ...videos[index], thumbnail_url: firstReady.visual_url, progress: 85, updated_at: new Date().toISOString() };
+      saveLocalVideos(videos);
+    }
+  }
+}
+
 export async function updateVideoScene(sceneId: string, updates: Partial<VideoSceneRecord>): Promise<VideoSceneRecord> {
   if (isSupabaseConfigured) {
     try {

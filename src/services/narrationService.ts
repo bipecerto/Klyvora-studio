@@ -1,4 +1,6 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { applyGeneratedNarrationLocally, getVideoById } from './videoService';
+import { getSeriesById } from './seriesService';
 
 export interface PreviewVoiceResponse {
   success: boolean;
@@ -19,7 +21,7 @@ export interface NarrationResponse {
 }
 
 /**
-  Generate a short voice preview audio snippet via Gemini TTS backend
+  Generate a short voice preview using the beta free TTS backend
  */
 export async function previewVoice(
   voice: string,
@@ -76,6 +78,19 @@ export async function generateNarration(
     } catch (_) {}
   }
 
+  let localScript: string | undefined;
+  let localLanguage: string | undefined;
+  if (token === 'guest-token') {
+    try {
+      const localVideo = await getVideoById(videoId);
+      localScript = localVideo?.script || undefined;
+      if (localVideo?.series_id) {
+        const series = await getSeriesById(localVideo.series_id);
+        localLanguage = series?.language || undefined;
+      }
+    } catch (_) {}
+  }
+
   const response = await fetch('/api/generate-narration', {
     method: 'POST',
     headers: {
@@ -86,6 +101,8 @@ export async function generateNarration(
       video_id: videoId,
       voice_id: voiceId,
       voice_style: voiceStyle,
+      script: localScript,
+      language: localLanguage,
     }),
   });
 
@@ -93,6 +110,10 @@ export async function generateNarration(
 
   if (!response.ok) {
     throw new Error(data.error || 'Failed to generate narration audio.');
+  }
+
+  if (token === 'guest-token' && data?.narration_url) {
+    applyGeneratedNarrationLocally(videoId, data);
   }
 
   return data as NarrationResponse;
