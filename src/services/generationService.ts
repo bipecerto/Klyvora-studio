@@ -1,4 +1,6 @@
-import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { safeApiFetch } from './apiClient';
+import { applyGeneratedScriptLocally, getVideoById } from './videoService';
+import { getSeriesById } from './seriesService';
 
 export interface GenerationResponse {
   success: boolean;
@@ -12,8 +14,7 @@ export interface GenerationResponse {
 }
 
 /**
- * Triggers the AI Studio server-side API endpoint `/api/generate-video-script`
- * using the server-side GEMINI_API_KEY.
+ * Generates video script via server endpoint /api/generate-video-script
  */
 export async function generateVideoScript(
   videoId: string,
@@ -21,37 +22,47 @@ export async function generateVideoScript(
   seriesContext?: any,
   topic?: string
 ): Promise<GenerationResponse> {
-  let token = 'guest-token';
+  let resolvedSeriesContext = seriesContext;
 
-  if (isSupabaseConfigured) {
+  if (!resolvedSeriesContext) {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.access_token) {
-        token = session.access_token;
+      const localVideo = await getVideoById(videoId);
+      if (localVideo?.series_id) {
+        resolvedSeriesContext = await getSeriesById(localVideo.series_id);
       }
     } catch (_) {}
   }
 
-  const response = await fetch('/api/generate-video-script', {
+  const data = await safeApiFetch<GenerationResponse>('/api/generate-video-script', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
-    },
     body: JSON.stringify({
       video_id: videoId,
       auto_topic: autoTopic,
-      series_context: seriesContext,
+      series_context: resolvedSeriesContext,
       topic,
     }),
   });
 
-  const data = await response.json().catch(() => ({}));
-
-  if (!response.ok || data?.error) {
-    throw new Error(data?.error || `Server generation failed (Status ${response.status})`);
-  }
-
-  return data as GenerationResponse;
+  applyGeneratedScriptLocally(videoId, data);
+  return data;
 }
 
+/**
+ * Divides or formats script into structured scenes via /api/generate-scenes
+ */
+export async function generateScenes(
+  videoId: string,
+  script?: string,
+  scenes?: any[],
+  duration = 60
+): Promise<{ success: boolean; video_id: string; scenes: any[] }> {
+  return safeApiFetch('/api/generate-scenes', {
+    method: 'POST',
+    body: JSON.stringify({
+      video_id: videoId,
+      script,
+      scenes,
+      duration,
+    }),
+  });
+}

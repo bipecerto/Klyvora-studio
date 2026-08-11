@@ -138,7 +138,22 @@ serve(async (req) => {
       );
     }
 
-    const modelName = Deno.env.get("GEMINI_MODEL") || "gemini-3.6-flash";
+function sanitizeModelName(val: string | undefined, defaultModel: string): string {
+  if (!val || typeof val !== 'string') return defaultModel;
+  let trimmed = val.trim();
+  const apiKey = (Deno.env.get("GEMINI_API_KEY") || "").trim();
+  if (trimmed.startsWith("AIza") || (apiKey && trimmed === apiKey)) return defaultModel;
+  if (trimmed.includes(" ")) {
+    const candidate = trimmed.split(/\s+/).pop();
+    if (candidate && (candidate.startsWith("gemini-") || candidate.startsWith("imagen-"))) return candidate;
+    return defaultModel;
+  }
+  if (!trimmed.startsWith("gemini-") && !trimmed.startsWith("imagen-")) return defaultModel;
+  return trimmed;
+}
+
+    const rawModel = Deno.env.get("GEMINI_TEXT_MODEL") || Deno.env.get("GEMINI_MODEL");
+    const modelName = sanitizeModelName(rawModel, "gemini-3.6-flash");
     const ai = new GoogleGenAI({
       apiKey,
       httpOptions: { headers: { "User-Agent": "aistudio-build" } },

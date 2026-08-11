@@ -1,4 +1,6 @@
-import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { safeApiFetch } from './apiClient';
+import { applyGeneratedNarrationLocally, getVideoById } from './videoService';
+import { getSeriesById } from './seriesService';
 
 export interface PreviewVoiceResponse {
   success: boolean;
@@ -19,87 +21,61 @@ export interface NarrationResponse {
 }
 
 /**
-  Generate a short voice preview audio snippet via Gemini TTS backend
+ * Generates a short voice preview using /api/preview-voice
  */
 export async function previewVoice(
   voice: string,
-  language: string = 'English'
+  language: string = 'Português do Brasil'
 ): Promise<PreviewVoiceResponse> {
-  let token = 'guest-token';
-
-  if (isSupabaseConfigured) {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.access_token) {
-        token = session.access_token;
-      }
-    } catch (_) {}
-  }
-
-  const response = await fetch('/api/preview-voice', {
+  return safeApiFetch<PreviewVoiceResponse>('/api/preview-voice', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
     body: JSON.stringify({
       voice,
       language,
     }),
   });
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.error || 'Failed to generate voice preview.');
-  }
-
-  return data as PreviewVoiceResponse;
 }
 
 /**
-  Generate or regenerate complete narration audio for a video script
+ * Generates narration audio for a video script via /api/generate-narration
  */
 export async function generateNarration(
   videoId: string,
   voiceId?: string,
   voiceStyle?: string
 ): Promise<NarrationResponse> {
-  let token = 'guest-token';
+  let localScript: string | undefined;
+  let localLanguage: string | undefined;
 
-  if (isSupabaseConfigured) {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.access_token) {
-        token = session.access_token;
-      }
-    } catch (_) {}
-  }
+  try {
+    const localVideo = await getVideoById(videoId);
+    localScript = localVideo?.script || undefined;
+    if (localVideo?.series_id) {
+      const series = await getSeriesById(localVideo.series_id);
+      localLanguage = series?.language || undefined;
+    }
+  } catch (_) {}
 
-  const response = await fetch('/api/generate-narration', {
+  const data = await safeApiFetch<NarrationResponse>('/api/generate-narration', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
     body: JSON.stringify({
       video_id: videoId,
       voice_id: voiceId,
       voice_style: voiceStyle,
+      script: localScript,
+      language: localLanguage,
     }),
   });
 
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.error || 'Failed to generate narration audio.');
+  if (data?.narration_url) {
+    applyGeneratedNarrationLocally(videoId, data);
   }
 
-  return data as NarrationResponse;
+  return data;
 }
 
 /**
-  Alias to regenerate narration with optionally new voice or voice style
+ * Regenerate narration
  */
 export async function regenerateNarration(
   videoId: string,

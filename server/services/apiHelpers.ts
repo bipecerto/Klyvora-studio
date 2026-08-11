@@ -49,10 +49,33 @@ export function isValidSupabaseUrl(url: string | undefined): boolean {
  */
 export function sanitizeModelName(val: string | undefined, defaultModel: string): string {
   if (!val || typeof val !== 'string') return defaultModel;
-  const trimmed = val.trim();
-  if (!trimmed.startsWith('gemini-') && !trimmed.startsWith('imagen-')) {
+  let trimmed = val.trim();
+
+  // Reject API key values accidentally passed in place of model names
+  const apiKey = (process.env.GEMINI_API_KEY || '').trim();
+  if (trimmed.startsWith('AIza') || (apiKey && trimmed === apiKey)) {
     return defaultModel;
   }
+
+  // Extract model name if prepended with environment variable name (e.g. "GEMINI_TEXT_MODEL gemini-3.6-flash")
+  if (trimmed.includes(' ')) {
+    const parts = trimmed.split(/\s+/);
+    const candidate = parts[parts.length - 1];
+    if (candidate.startsWith('gemini-') || candidate.startsWith('imagen-') || candidate.startsWith('veo-') || candidate.startsWith('lyria-')) {
+      return candidate;
+    }
+    return defaultModel;
+  }
+
+  if (
+    !trimmed.startsWith('gemini-') &&
+    !trimmed.startsWith('imagen-') &&
+    !trimmed.startsWith('veo-') &&
+    !trimmed.startsWith('lyria-')
+  ) {
+    return defaultModel;
+  }
+
   return trimmed;
 }
 
