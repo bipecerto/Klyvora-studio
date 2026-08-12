@@ -51,7 +51,7 @@ rodando no navegador do usuário, sem depender de servidor.
   de negócio à mão, a lógica original dos handlers foi preservada quase
   1:1 em `lib/server/handlers/*.ts` e roda através de um adaptador em
   `lib/server/legacyHandler.ts`.
-- `server-lib/*` (Gemini, Cloudflare, TTS, geração de cena) → `lib/server/*`
+- `server-lib/*` (Groq, Cloudflare, TTS, geração de cena) → `lib/server/*`
 
 ### 4. Coisas que eu encontrei quebradas no projeto original (não foram
 introduzidas por essa migração) e corrigi
@@ -88,6 +88,15 @@ Implementei todas de verdade em `services/videoService.ts` e
 3. Configure as env vars do `.env.example` no dashboard da Vercel
    (Settings → Environment Variables).
 4. Deploy.
+
+## Provedor de IA de texto: Groq (não mais Gemini)
+A geração de roteiro (`generate-video-script`) usa a API de chat completions
+da Groq (compatível com o formato OpenAI), em
+`lib/server/scriptInteractions.ts`. Configure `GROQ_API_KEY` (crie em
+https://console.groq.com/keys) e, opcionalmente, `GROQ_TEXT_MODEL`
+(padrão: `llama-3.3-70b-versatile`). A geração de imagem das cenas continua
+via Cloudflare Workers AI (FLUX), e a narração continua via TTS grátis —
+nenhuma dessas duas dependia de Gemini.
 
 ## O que ainda vale revisar manualmente
 - `youtube_title/description/tags` foram adicionados ao tipo `VideoRecord`

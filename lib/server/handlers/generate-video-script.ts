@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { generateStudioScript } from '../geminiInteractions';
+import { generateStudioScript } from '../scriptInteractions';
 
 export async function handler(req: any, res: any) {
   res.setHeader('Access-Control-Allow-Credentials', 'true');

@@ -8,7 +8,7 @@ export async function GET() {
     app: 'klyvora-studio',
     backend: 'faceless-klyvora-engine-nextjs',
     configured: {
-      gemini: Boolean(process.env.GEMINI_API_KEY),
+      groq: Boolean(process.env.GROQ_API_KEY),
       cloudflare: Boolean(process.env.CLOUDFLARE_ACCOUNT_ID && process.env.CLOUDFLARE_API_TOKEN),
       supabase: Boolean(
         (process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL) &&
