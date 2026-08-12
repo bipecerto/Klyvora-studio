@@ -27,8 +27,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onCloseMobile }) =
   const router = useRouter();
   const { user, profile, signOut } = useAuth();
 
-  const displayName = profile?.name || user?.name || user?.email?.split('@')[0] || 'User';
-  const displayEmail = profile?.email || user?.email || 'user@klyvora.ai';
+  const displayName = profile?.name || user?.name || 'Meu Canal';
   const avatarUrl = profile?.avatar_url || user?.avatar_url;
   const initial = displayName.charAt(0).toUpperCase();
 
@@ -42,7 +41,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onCloseMobile }) =
   const handleLogout = async () => {
     setUserMenuOpen(false);
     await signOut();
-    router.push('/login');
   };
 
   const navContent = (
@@ -167,7 +165,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onCloseMobile }) =
             <div className="truncate">
               <p className="text-[13px] font-semibold text-white truncate">{displayName}</p>
               <p className="text-[11px] text-[rgba(255,255,255,0.45)] truncate">
-                {displayEmail}
+                Klyvora Studio
               </p>
             </div>
           </div>

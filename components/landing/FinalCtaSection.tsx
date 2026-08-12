@@ -34,7 +34,7 @@ export const FinalCtaSection: React.FC<FinalCtaProps> = ({ onNavigate }) => {
 
           <div className="pt-2 relative z-10 flex flex-col sm:flex-row items-center justify-center gap-3">
             <button
-              onClick={() => handleNav('/register')}
+              onClick={() => handleNav('/access')}
               className="klyvora-btn-gradient text-white font-semibold px-8 py-3.5 rounded-xl text-[15px] shadow-lg active:scale-95 transition-all w-full sm:w-auto"
             >
               Começar a criar

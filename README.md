@@ -81,6 +81,51 @@ Implementei todas de verdade em `services/videoService.ts` e
   `components/series/`, e `LoginForm.tsx`) e o `DataContext.tsx` (contexto
   de dados mockados que só esses órfãos usavam).
 
+## Acesso: chave única (sem contas/login)
+Não existe mais cadastro de usuário nem Supabase Auth. O site inteiro fica
+atrás de **uma única chave de acesso compartilhada**, configurada em
+`SITE_ACCESS_KEY`. Quem souber a chave entra em `/access`, digita e recebe
+um cookie válido por 1 ano — sem e-mail, sem senha por conta. Toda a
+verificação acontece em `middleware.ts` (roda antes de qualquer página ou
+rota de API) e em `app/api/access/route.ts`.
+
+Sem `SITE_ACCESS_KEY` configurada, ninguém consegue entrar (a rota de
+verificação retorna erro 500 pedindo pra configurar).
+
+## Sem Supabase por padrão — tudo roda local
+O Supabase deixou de ser necessário. Sem as variáveis `NEXT_PUBLIC_SUPABASE_*`
+configuradas, todo o app cai automaticamente no modo local que já existia no
+código (`isSupabaseConfigured === false`): séries, vídeos, cenas, legendas e
+imagens ficam salvos no `localStorage` do navegador. Isso já estava
+implementado em quase todo o código como fallback — só não era o caminho
+padrão. As variáveis do Supabase continuam no `.env.example` como
+**opcionais**, caso você queira persistência em banco de dados real no
+futuro.
+
+Consequência prática: os dados ficam por navegador/dispositivo, não
+sincronizam entre aparelhos. Para um uso pessoal/solo isso é suficiente; se
+mais de uma pessoa for usar de dispositivos diferentes, vale reativar o
+Supabase preenchendo as variáveis.
+
+## Foco: vídeos longos de YouTube (não mais Shorts)
+- Formato agora é sempre **16:9** (não mais 9:16 vertical) — vale notar que
+  o modelo de imagem usado (`flux-1-schnell` da Cloudflare) só aceita
+  `prompt`/`seed`/`steps`, sem parâmetro de width/height; quem encaixa a
+  imagem no formato 16:9 é o canvas do navegador (`drawImageCover` em
+  `lib/local-render/canvasRenderer.ts`), não a geração em si.
+- Duração alvo do roteiro: **5, 10, 15 ou 20 minutos** (antes era em
+  segundos, pensado pra Shorts).
+- Ritmo de narração recalibrado para ~150 palavras/minuto e uma imagem nova
+  a cada ~25s (antes, uma imagem a cada poucos segundos, ritmo de Shorts).
+- Removido da tela de criação de série: seleção de plataformas
+  (TikTok/Reels/Shorts) — o produto agora é só YouTube.
+- Removido da tela do vídeo: o card de "Render Cloud" (Netlify FFmpeg), que
+  já estava descontinuado — só sobrou o Render Local (navegador), que é o
+  caminho real e funcional.
+- Geração de imagens das cenas agora roda **uma cena por vez** no cliente
+  (loop sequencial), em vez de uma chamada só com todas as cenas — evita o
+  erro 413 (payload grande demais) que acontecia em vídeos com muitas cenas.
+
 ## Deploy na Vercel
 1. Suba esta pasta como repositório Git.
 2. Import na Vercel — ela detecta Next.js automaticamente, sem configuração

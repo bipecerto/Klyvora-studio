@@ -1,7 +1,5 @@
 export interface CloudflareImageOptions {
   prompt: string;
-  width?: number;
-  height?: number;
 }
 
 export interface GeneratedImage {
@@ -15,14 +13,18 @@ const DEFAULT_MODEL = '@cf/black-forest-labs/flux-1-schnell';
 
 /**
  * Generates ONE image per prompt using Cloudflare Workers AI FLUX model.
- * Authenticates via CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID.
+ * Authenticates via CLOUDFLARE_API_TOKEN e CLOUDFLARE_ACCOUNT_ID.
+ *
+ * IMPORTANTE: o flux-1-schnell só aceita `prompt`, `seed` e `steps` — não tem
+ * parâmetro de width/height (a API ignora silenciosamente qualquer outro
+ * campo). A imagem sempre sai numa resolução fixa do modelo; o encaixe no
+ * formato 16:9 do vídeo é feito no canvas do navegador (drawImageCover, em
+ * lib/local-render/canvasRenderer.ts), que já recorta tipo "object-fit: cover".
  */
 export async function generateCloudflareImage(
   input: string | CloudflareImageOptions
 ): Promise<GeneratedImage> {
   const prompt = typeof input === 'string' ? input : input.prompt;
-  const width = typeof input === 'object' && input.width ? input.width : 576;
-  const height = typeof input === 'object' && input.height ? input.height : 1024;
 
   let accountId = (process.env.CLOUDFLARE_ACCOUNT_ID || '').trim();
   let token = (process.env.CLOUDFLARE_API_TOKEN || '').trim();
@@ -51,8 +53,6 @@ export async function generateCloudflareImage(
     },
     body: JSON.stringify({
       prompt: prompt.slice(0, 2048),
-      width,
-      height,
       steps: 4,
       seed: Math.floor(Math.random() * 2147483647),
     }),
@@ -73,7 +73,7 @@ export async function generateCloudflareImage(
 }
 
 /**
- * Builds an enriched visual prompt for 9:16 vertical / 16:9 horizontal faceless video scenes.
+ * Builds an enriched visual prompt for long-form 16:9 YouTube video scenes.
  */
 export function buildEnrichedVisualPrompt(scenePrompt: string | null | undefined, seriesRecord?: any): string {
   const basePrompt = scenePrompt || 'A dramatic cinematic scene for a faceless video';

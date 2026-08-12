@@ -112,7 +112,7 @@ export const GenerateVideoModal: React.FC<GenerateVideoModalProps> = ({
         console.warn('Narration auto-generation error (video script still available):', narrErr);
       }
 
-      // 4. Generate Real Scene Visuals (Gemini Image API)
+      // 4. Generate Real Scene Visuals (Cloudflare Workers AI - FLUX)
       setProgressPercent(65);
       setProgressStage('Generating scene visuals...');
       try {

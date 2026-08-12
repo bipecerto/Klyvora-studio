@@ -61,13 +61,13 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate }) => {
         {/* Right: Actions */}
         <div className="flex items-center gap-4">
           <button
-            onClick={() => handleNav('/login')}
+            onClick={() => handleNav('/access')}
             className="hidden sm:inline-block text-[14px] text-[rgba(255,255,255,0.65)] hover:text-white transition-colors font-medium px-2 py-1"
           >
             Entrar
           </button>
           <button
-            onClick={() => handleNav('/register')}
+            onClick={() => handleNav('/access')}
             className="klyvora-btn-gradient text-white text-[13px] sm:text-[14px] font-semibold px-4 py-2 rounded-xl h-[38px] flex items-center justify-center shadow-md active:scale-95 transition-all"
           >
             Começar agora
@@ -100,8 +100,8 @@ export const Footer: React.FC<{ onNavigate?: (p: string) => void }> = ({ onNavig
         <div className="flex items-center gap-6 font-normal">
           <a href="#how-it-works" className="hover:text-white transition-colors">Como funciona</a>
           <a href="#features" className="hover:text-white transition-colors">Recursos</a>
-          <button onClick={() => handleNav('/login')} className="hover:text-white transition-colors">Termos</button>
-          <button onClick={() => handleNav('/register')} className="hover:text-white transition-colors">Privacidade</button>
+          <button onClick={() => handleNav('/access')} className="hover:text-white transition-colors">Termos</button>
+          <button onClick={() => handleNav('/access')} className="hover:text-white transition-colors">Privacidade</button>
         </div>
       </div>
     </footer>

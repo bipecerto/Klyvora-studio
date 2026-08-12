@@ -107,7 +107,7 @@ export async function handler(req: any, res: any) {
         const finalPrompt = buildEnrichedVisualPrompt(rawPrompt, seriesRecord);
 
         // Generate ONE image per scene prompt
-        const imageResult = await generateCloudflareImage({ prompt: finalPrompt, width: 576, height: 1024 });
+        const imageResult = await generateCloudflareImage({ prompt: finalPrompt });
         const imageBuffer = Buffer.from(imageResult.base64, 'base64');
         let visualUrl = `data:${imageResult.mimeType};base64,${imageResult.base64}`;
         let storagePath = null;
@@ -122,10 +122,17 @@ export async function handler(req: any, res: any) {
               upsert: true,
             });
 
-          if (!uploadErr) {
-            const { data: urlData } = supabaseAdmin.storage.from('media').getPublicUrl(storagePath);
-            if (urlData?.publicUrl) visualUrl = urlData.publicUrl;
+          if (uploadErr) {
+            // Não deixa a imagem em base64 (~500KB+) entrar na resposta JSON:
+            // com várias cenas isso estoura o limite de payload da Vercel
+            // (HTTP 413 / FUNCTION_PAYLOAD_TOO_LARGE). Loga o motivo real do
+            // Supabase Storage e trata como falha dessa cena.
+            console.error(`Supabase Storage upload failed for scene ${sceneId}:`, uploadErr.message || uploadErr);
+            throw new Error(`Falha ao salvar imagem no Supabase Storage: ${uploadErr.message || 'erro desconhecido'}`);
           }
+
+          const { data: urlData } = supabaseAdmin.storage.from('media').getPublicUrl(storagePath);
+          if (urlData?.publicUrl) visualUrl = urlData.publicUrl;
 
           const { data: savedScene } = await supabaseAdmin
             .from('video_scenes')

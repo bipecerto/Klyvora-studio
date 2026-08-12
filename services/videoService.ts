@@ -259,6 +259,8 @@ export async function createVideo(data: {
     thumbnail_url: data.thumbnail_url || DEFAULT_THUMBNAIL,
     video_url: null,
     error_message: null,
+    aspect_ratio: '16:9',
+    video_format: 'long_form',
   };
 
   if (isSupabaseConfigured) {

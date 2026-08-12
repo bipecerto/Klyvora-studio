@@ -30,10 +30,9 @@ const NewSeriesPage: React.FC = () => {
     name: 'Classic British Cars',
     niche: 'Automotive',
     language: 'English',
-    duration: '60 sec',
-    platforms: ['TikTok', 'Instagram Reels', 'YouTube Shorts'],
+    duration: '10 min',
     about:
-      'Short documentary-style videos about forgotten British cars, their history and engineering secrets.',
+      'Long-form documentary-style videos about forgotten British cars, their history and engineering secrets.',
     contentStyle: 'Documentary',
     tone: 'Dramatic',
     voiceGender: 'Male',
@@ -41,22 +40,13 @@ const NewSeriesPage: React.FC = () => {
     voiceId: 'Charon',
     visualSource: 'AI Images',
     visualStyle: 'Cinematic',
-    imageFrequency: 'Every 3 seconds',
+    imageFrequency: 'Every 30 seconds',
     enableCaptions: true,
     captionStyle: 'Hormozi',
     fontSize: 'Medium',
-    captionPosition: 'Center',
+    captionPosition: 'Bottom',
     highlightKeywords: true,
   });
-
-  const togglePlatform = (p: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      platforms: prev.platforms.includes(p)
-        ? prev.platforms.filter((item) => item !== p)
-        : [...prev.platforms, p],
-    }));
-  };
 
   const handleNext = () => {
     if (currentStep < 6) setCurrentStep((prev) => prev + 1);
@@ -70,14 +60,15 @@ const NewSeriesPage: React.FC = () => {
     setIsSubmitting(true);
     setErrorMessage(null);
     try {
-      const durationSeconds = parseInt(formData.duration) || 60;
+      const durationMinutes = parseInt(formData.duration) || 10;
+      const durationSeconds = durationMinutes * 60;
       const created = await createSeries({
         name: formData.name,
         niche: formData.niche,
         description: formData.about,
         language: formData.language,
         duration: durationSeconds,
-        platforms: formData.platforms,
+        platforms: ['YouTube'],
         content_style: formData.contentStyle,
         tone: formData.tone,
         voice_gender: formData.voiceGender,
@@ -95,7 +86,7 @@ const NewSeriesPage: React.FC = () => {
       router.push(`/series/${created.id}`);
     } catch (err: any) {
       console.error('Failed to create series:', err);
-      setErrorMessage(err.message || 'Failed to create series in Supabase.');
+      setErrorMessage(err.message || 'Failed to create series.');
     } finally {
       setIsSubmitting(false);
     }
@@ -234,7 +225,7 @@ const NewSeriesPage: React.FC = () => {
                 <div className="space-y-1.5">
                   <label className="text-[13px] font-medium text-white">Target Duration</label>
                   <div className="grid grid-cols-4 gap-2">
-                    {['30 sec', '45 sec', '60 sec', '90 sec'].map((d) => (
+                    {['5 min', '10 min', '15 min', '20 min'].map((d) => (
                       <button
                         key={d}
                         type="button"
@@ -249,37 +240,6 @@ const NewSeriesPage: React.FC = () => {
                       </button>
                     ))}
                   </div>
-                </div>
-              </div>
-
-              {/* Target Platforms */}
-              <div className="space-y-1.5">
-                <label className="text-[13px] font-medium text-white">Target Platforms</label>
-                <div className="flex flex-wrap gap-3">
-                  {['TikTok', 'Instagram Reels', 'YouTube Shorts'].map((plat) => {
-                    const selected = formData.platforms.includes(plat);
-                    return (
-                      <button
-                        key={plat}
-                        type="button"
-                        onClick={() => togglePlatform(plat)}
-                        className={`px-4 py-2.5 rounded-xl border text-xs font-semibold flex items-center gap-2 transition-all ${
-                          selected
-                            ? 'bg-[rgba(91,63,214,0.2)] border-[#8B5CF6] text-white'
-                            : 'bg-[#1C1C1F] border-[rgba(255,255,255,0.06)] text-[rgba(255,255,255,0.5)]'
-                        }`}
-                      >
-                        <span
-                          className={`w-3.5 h-3.5 rounded flex items-center justify-center border ${
-                            selected ? 'bg-[#8B5CF6] border-[#8B5CF6]' : 'border-white/30'
-                          }`}
-                        >
-                          {selected && <Check className="w-2.5 h-2.5 text-white" />}
-                        </span>
-                        {plat}
-                      </button>
-                    );
-                  })}
                 </div>
               </div>
             </div>
@@ -517,17 +477,17 @@ const NewSeriesPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* 9:16 Real Live Caption Preview Frame */}
+                {/* 16:9 Real Live Caption Preview Frame */}
                 <div className="flex justify-center">
-                  <div className="w-[180px] aspect-[9/16] rounded-[20px] bg-black border border-[rgba(255,255,255,0.15)] relative overflow-hidden flex flex-col justify-between p-4 shadow-2xl">
+                  <div className="w-[320px] aspect-video rounded-[16px] bg-black border border-[rgba(255,255,255,0.15)] relative overflow-hidden flex flex-col justify-between p-4 shadow-2xl">
                     <img
-                      src="https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=400&auto=format&fit=crop&q=80"
+                      src="https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=800&auto=format&fit=crop&q=80"
                       alt="Preview frame"
                       className="absolute inset-0 w-full h-full object-cover opacity-60"
                     />
 
                     <div className="relative z-10 text-[9px] font-mono text-white/50 text-right">
-                      9:16 Preview
+                      16:9 Preview
                     </div>
 
                     {/* Dynamic Caption Text Render */}
@@ -598,7 +558,7 @@ const NewSeriesPage: React.FC = () => {
                   <p className="text-[rgba(255,255,255,0.6)]">Name: {formData.name}</p>
                   <p className="text-[rgba(255,255,255,0.6)]">Niche: {formData.niche}</p>
                   <p className="text-[rgba(255,255,255,0.6)]">Language: {formData.language}</p>
-                  <p className="text-[rgba(255,255,255,0.6)]">Platforms: {formData.platforms.join(', ')}</p>
+                  <p className="text-[rgba(255,255,255,0.6)]">Duration: {formData.duration}</p>
                 </div>
 
                 <div className="p-4 rounded-xl bg-[#1C1C1F] border border-[rgba(255,255,255,0.06)] space-y-2">

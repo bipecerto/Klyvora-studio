@@ -18,19 +18,36 @@ export async function generateSceneImage(videoId: string, sceneId: string): Prom
   throw new Error(data?.error || 'Falha ao gerar imagem para a cena.');
 }
 
-export async function generateVideoVisuals(videoId: string): Promise<{ success: boolean; scenes: VideoSceneRecord[] }> {
+export async function generateVideoVisuals(
+  videoId: string,
+  onProgress?: (done: number, total: number, scene: VideoSceneRecord) => void
+): Promise<{ success: boolean; scenes: VideoSceneRecord[] }> {
   const localScenes = await getVideoScenes(videoId).catch(() => []);
-
-  const data = await safeApiFetch<{ success: boolean; scenes: VideoSceneRecord[] }>('/api/generate-video-visuals', {
-    method: 'POST',
-    body: JSON.stringify({ video_id: videoId, scenes: localScenes }),
-  });
-
-  if (Array.isArray(data?.scenes)) {
-    applyGeneratedVisualsLocally(videoId, data.scenes);
+  if (!localScenes.length) {
+    throw new Error('Nenhuma cena disponível para gerar imagens.');
   }
 
-  return data;
+  // Gera uma cena por vez (em vez de uma chamada única com todas as cenas):
+  // sem Supabase Storage, cada imagem volta em base64 na resposta — juntar
+  // dezenas delas numa resposta só estoura o limite de payload da Vercel
+  // (HTTP 413). Chamando uma de cada vez, cada resposta fica pequena.
+  const results: VideoSceneRecord[] = [];
+  for (let i = 0; i < localScenes.length; i++) {
+    const scene = localScenes[i];
+    try {
+      const updated = await generateSceneImage(videoId, scene.id);
+      results.push(updated);
+    } catch (err: any) {
+      results.push({
+        ...scene,
+        visual_status: 'failed',
+        visual_error: err.message || 'Falha ao gerar imagem.',
+      } as VideoSceneRecord);
+    }
+    onProgress?.(i + 1, localScenes.length, results[results.length - 1]);
+  }
+
+  return { success: true, scenes: results };
 }
 
 export async function regenerateSceneImage(videoId: string, sceneId: string): Promise<VideoSceneRecord> {
@@ -81,13 +98,12 @@ export async function retryMissingVisuals(videoId: string): Promise<{ success: b
     return { success: true, scenes };
   }
 
-  const data = await safeApiFetch<{ success: boolean; scenes: VideoSceneRecord[] }>('/api/generate-video-visuals', {
-    method: 'POST',
-    body: JSON.stringify({ video_id: videoId, scenes: missing }),
-  });
-
-  if (Array.isArray(data?.scenes)) {
-    applyGeneratedVisualsLocally(videoId, data.scenes);
+  for (const scene of missing) {
+    try {
+      await generateSceneImage(videoId, scene.id);
+    } catch (err) {
+      console.warn(`Falha ao regenerar a cena ${scene.id}:`, err);
+    }
   }
 
   const merged = await getVideoScenes(videoId).catch(() => scenes);

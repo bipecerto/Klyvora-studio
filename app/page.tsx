@@ -72,7 +72,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
           {/* CTA & Sub-caption */}
           <div className="pt-2 flex flex-col items-center gap-2">
             <button
-              onClick={() => handleNav('/register')}
+              onClick={() => handleNav('/access')}
               className="klyvora-btn-gradient text-white font-semibold px-6 h-[48px] rounded-xl text-[15px] flex items-center justify-center shadow-lg active:scale-95 transition-all w-full sm:w-auto"
             >
               Começar a criar

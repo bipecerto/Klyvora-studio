@@ -80,8 +80,10 @@ export async function generateStudioScript(input: ScriptGenerationInput): Promis
   const visualStyle = input.visualStyle || 'Cinematic';
   const specifiedTopic = (input.specifiedTopic || '').trim();
 
-  const targetWords = Math.max(45, Math.round(durationSec * 2.35));
-  const targetScenes = Math.max(5, Math.min(24, Math.round(durationSec / 5)));
+  // Vídeo longo de YouTube: ritmo de narração ~150 palavras/minuto, e uma
+  // imagem nova a cada ~25s (em vez do ritmo de shorts, de poucos segundos).
+  const targetWords = Math.max(120, Math.round((durationSec / 60) * 150));
+  const targetScenes = Math.max(8, Math.min(80, Math.round(durationSec / 25)));
 
   const systemInstruction =
     `Você é o motor de roteiros do Klyvora. Crie roteiros naturais, envolventes e fáceis de narrar. ` +
@@ -112,6 +114,7 @@ export async function generateStudioScript(input: ScriptGenerationInput): Promis
         ],
         response_format: { type: 'json_object' },
         temperature: 0.8,
+        max_tokens: 8000,
       }),
     });
   } catch {

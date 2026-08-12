@@ -619,7 +619,7 @@ const VideoDetailPage: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* LEFT COLUMN: Video Player / Slideshow / Rendering State */}
         <div className={`${isLongForm ? 'lg:col-span-6' : 'lg:col-span-5'} flex flex-col items-center gap-4`}>
-          <div className={`w-full ${isLongForm ? 'max-w-[620px] aspect-[16/9]' : 'max-w-[340px] aspect-[9/16]'} rounded-[24px] bg-[#0F0F12] border border-[rgba(255,255,255,0.12)] shadow-2xl relative overflow-hidden flex flex-col justify-between p-5 group`}>
+          <div className={`w-full ${isLongForm ? 'max-w-[620px] aspect-[16/9]' : 'max-w-[340px] aspect-video'} rounded-[24px] bg-[#0F0F12] border border-[rgba(255,255,255,0.12)] shadow-2xl relative overflow-hidden flex flex-col justify-between p-5 group`}>
             {video.render_status === 'ready' && video.video_url ? (
               /* REAL RENDERED MP4 VIDEO PLAYER */
               <>
@@ -690,7 +690,7 @@ const VideoDetailPage: React.FC = () => {
                 </button>
               </div>
             ) : hasAnySceneVisuals ? (
-              /* REAL 9:16 VISUAL SLIDESHOW PREVIEW */
+              /* REAL 16:9 VISUAL SLIDESHOW PREVIEW */
               <>
                 <img
                   src={currentSceneVisualUrl || defaultThumbnail}
@@ -758,7 +758,7 @@ const VideoDetailPage: React.FC = () => {
 
                 <div className="relative z-10 flex items-center justify-between">
                   <span className="text-[10px] font-mono font-semibold bg-black/80 px-2 py-1 rounded text-white/80 border border-white/10">
-                    1080x1920 9:16
+                    1920x1080 16:9
                   </span>
                   <StatusBadge status={video.status} />
                 </div>
@@ -770,7 +770,7 @@ const VideoDetailPage: React.FC = () => {
                   </div>
 
                   <p className="text-[11px] text-[#A1A1AA] leading-relaxed">
-                    Gere as imagens 9:16 para cada cena utilizando a Gemini Image API.
+                    Gere as imagens 16:9 para cada cena utilizando a Cloudflare Workers AI (FLUX).
                   </p>
 
                   <button
@@ -780,7 +780,7 @@ const VideoDetailPage: React.FC = () => {
                   >
                     {isGeneratingVisuals ? (
                       <>
-                        <Loader2 className="w-4 h-4 animate-spin" /> Gerando Imagens 9:16...
+                        <Loader2 className="w-4 h-4 animate-spin" /> Gerando Imagens 16:9...
                       </>
                     ) : (
                       <>
@@ -850,13 +850,12 @@ const VideoDetailPage: React.FC = () => {
 
                 <div className={`p-2 rounded-lg border flex items-center gap-2 ${isVisualsReady ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300' : 'bg-rose-500/10 border-rose-500/20 text-rose-300'}`}>
                   {isVisualsReady ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> : <XCircle className="w-3.5 h-3.5 text-rose-400 shrink-0" />}
-                  <span className="font-semibold truncate">3. Visuals 9:16</span>
+                  <span className="font-semibold truncate">3. Visuals 16:9</span>
                 </div>
               </div>
 
-              {/* TWO RENDER MODES: LOCAL (FREE) & CLOUD */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
-                {/* CARD 1: RENDER LOCAL (FREE) */}
+              {/* RENDER: LOCAL NO NAVEGADOR (o render em nuvem foi descontinuado) */}
+              <div className="pt-1">
                 <div className="p-3.5 rounded-xl bg-[#141416] border border-emerald-500/30 flex flex-col justify-between space-y-3 relative overflow-hidden">
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-mono font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/30">
@@ -929,59 +928,6 @@ const VideoDetailPage: React.FC = () => {
                         title="Download Local Render"
                       >
                         <Download className="w-3.5 h-3.5" /> Download
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                {/* CARD 2: RENDER CLOUD */}
-                <div className="p-3.5 rounded-xl bg-[#141416] border border-[#8B5CF6]/30 flex flex-col justify-between space-y-3 relative overflow-hidden">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-mono font-bold text-purple-300 bg-purple-500/10 px-2 py-0.5 rounded border border-purple-500/30">
-                      CLOUD
-                    </span>
-                    <span className="text-[10px] font-mono text-white/50 flex items-center gap-1">
-                      <Cloud className="w-3 h-3 text-purple-400" /> Netlify FFmpeg
-                    </span>
-                  </div>
-
-                  <div className="space-y-1">
-                    <h4 className="text-xs font-bold text-white flex items-center gap-1.5">
-                      Render Cloud — MP4
-                    </h4>
-                    <p className="text-[11px] text-[rgba(255,255,255,0.6)] leading-tight">
-                      1080x1920 MP4 H.264 processed on high-speed cloud servers with ASS burned-in subtitles.
-                    </p>
-                  </div>
-
-                  <div className="pt-1 flex items-center gap-2">
-                    <button
-                      onClick={handleStartRender}
-                      disabled={!isCanRender || isRendering}
-                      className={`w-full h-[36px] rounded-lg font-semibold text-xs flex items-center justify-center gap-1.5 transition-all ${
-                        isCanRender && !isRendering
-                          ? 'klyvora-btn-gradient text-white font-semibold shadow-md cursor-pointer active:scale-95'
-                          : 'bg-white/10 text-white/40 cursor-not-allowed border border-white/5'
-                      }`}
-                    >
-                      {isRendering ? (
-                        <>
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" /> Rendering Cloud...
-                        </>
-                      ) : (
-                        <>
-                          <Cloud className="w-3.5 h-3.5" /> Render in Cloud
-                        </>
-                      )}
-                    </button>
-
-                    {video.render_status === 'ready' && video.video_url && (
-                      <button
-                        onClick={handleDownloadMp4}
-                        className="h-[36px] px-3 bg-purple-500/20 border border-purple-500/30 hover:bg-purple-500/30 text-purple-300 rounded-lg text-xs font-bold flex items-center gap-1 shrink-0"
-                        title="Download Cloud MP4"
-                      >
-                        <Download className="w-3.5 h-3.5" /> MP4
                       </button>
                     )}
                   </div>
@@ -1500,11 +1446,11 @@ const VideoDetailPage: React.FC = () => {
                         </span>
                       </div>
 
-                      {/* Main Card Grid: Image 9:16 + Prompt & Details */}
+                      {/* Main Card Grid: Image 16:9 + Prompt & Details */}
                       <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 items-start">
-                        {/* LEFT: REAL 9:16 IMAGE THUMBNAIL */}
+                        {/* LEFT: REAL 16:9 IMAGE THUMBNAIL */}
                         <div className="sm:col-span-4 flex flex-col items-center gap-2">
-                          <div className="w-full aspect-[9/16] max-w-[140px] rounded-xl bg-[#0F0F12] border border-white/10 shadow-lg relative overflow-hidden group/img flex items-center justify-center">
+                          <div className="w-full aspect-video max-w-[140px] rounded-xl bg-[#0F0F12] border border-white/10 shadow-lg relative overflow-hidden group/img flex items-center justify-center">
                             {isSceneGenerating ? (
                               <div className="flex flex-col items-center gap-2 text-[#8B5CF6] p-2 text-center">
                                 <Loader2 className="w-6 h-6 animate-spin" />
@@ -1748,7 +1694,7 @@ const VideoDetailPage: React.FC = () => {
               <div className="grid grid-cols-2 gap-4 text-[11px]">
                 <div className="p-3 bg-[#1C1C1F] rounded-xl border border-white/5 space-y-1">
                   <p className="text-[rgba(255,255,255,0.5)]">Resolução Vertical</p>
-                  <p className="font-bold text-white">1080 x 1920 (9:16 Portrait)</p>
+                  <p className="font-bold text-white">1920 x 1080 (16:9 Landscape)</p>
                 </div>
                 <div className="p-3 bg-[#1C1C1F] rounded-xl border border-white/5 space-y-1">
                   <p className="text-[rgba(255,255,255,0.5)]">Taxa de Quadros (FPS)</p>
@@ -1773,7 +1719,7 @@ const VideoDetailPage: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
           <div className="relative max-w-sm w-full bg-[#141416] border border-white/20 rounded-[24px] overflow-hidden p-4 flex flex-col items-center gap-4">
             <div className="w-full flex items-center justify-between">
-              <span className="text-xs font-bold text-white">Scene Image Preview (9:16)</span>
+              <span className="text-xs font-bold text-white">Scene Image Preview (16:9)</span>
               <button
                 onClick={() => setSelectedImageModalUrl(null)}
                 className="p-1 rounded-lg text-white/60 hover:text-white"
@@ -1782,7 +1728,7 @@ const VideoDetailPage: React.FC = () => {
               </button>
             </div>
 
-            <div className="w-full aspect-[9/16] rounded-xl overflow-hidden border border-white/10 shadow-2xl">
+            <div className="w-full aspect-video rounded-xl overflow-hidden border border-white/10 shadow-2xl">
               <img
                 src={selectedImageModalUrl}
                 alt="Enlarged Preview"
@@ -1823,7 +1769,7 @@ const VideoDetailPage: React.FC = () => {
             </div>
 
             <p className="text-xs text-[rgba(255,255,255,0.7)] leading-relaxed bg-[#1C1C1F] p-3.5 rounded-xl border border-white/5">
-              This will replace all generated scene images for this video using Gemini Image API. Are you sure you want to proceed?
+              This will replace all generated scene images for this video using Cloudflare Workers AI (FLUX). Are you sure you want to proceed?
             </p>
 
             <div className="flex items-center justify-end gap-3 pt-2">
@@ -2016,7 +1962,7 @@ const VideoDetailPage: React.FC = () => {
                     <button
                       key={asset.id}
                       onClick={() => handleSelectStockAsset(asset)}
-                      className="group relative aspect-[9/16] rounded-xl overflow-hidden border border-white/10 hover:border-emerald-500 transition-all text-left bg-[#0F0F12]"
+                      className="group relative aspect-video rounded-xl overflow-hidden border border-white/10 hover:border-emerald-500 transition-all text-left bg-[#0F0F12]"
                     >
                       <img src={asset.url} alt={asset.photographer || 'Stock'} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-2 flex flex-col justify-end">

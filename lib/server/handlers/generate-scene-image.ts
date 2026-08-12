@@ -91,8 +91,6 @@ export async function handler(req: any, res: any) {
     try {
       imageResult = await generateCloudflareImage({
         prompt: finalPrompt,
-        width: width || 576,
-        height: height || 1024,
       });
     } catch (imageErr: any) {
       console.error(`Cloudflare image generation failed for scene ${scene_id}:`, imageErr);
@@ -137,11 +135,32 @@ export async function handler(req: any, res: any) {
           upsert: true,
         });
 
-      if (!uploadErr) {
-        const { data: urlData } = supabaseAdmin.storage.from('media').getPublicUrl(storagePath);
-        if (urlData?.publicUrl) {
-          visualUrl = urlData.publicUrl;
-        }
+      if (uploadErr) {
+        console.error(`Supabase Storage upload failed for scene ${scene_id}:`, uploadErr.message || uploadErr);
+
+        await supabaseAdmin
+          .from('video_scenes')
+          .update({
+            visual_status: 'failed',
+            visual_error: `Falha ao salvar imagem no Supabase Storage: ${uploadErr.message || 'erro desconhecido'}`,
+          })
+          .eq('id', scene_id);
+
+        return res.status(200).json({
+          success: false,
+          error: `Falha ao salvar imagem no Supabase Storage: ${uploadErr.message || 'erro desconhecido'}`,
+          scene: {
+            ...(sceneRecord || {}),
+            id: scene_id,
+            visual_status: 'failed',
+            status: 'error',
+          },
+        });
+      }
+
+      const { data: urlData } = supabaseAdmin.storage.from('media').getPublicUrl(storagePath);
+      if (urlData?.publicUrl) {
+        visualUrl = urlData.publicUrl;
       }
 
       const { data: updatedScene } = await supabaseAdmin
